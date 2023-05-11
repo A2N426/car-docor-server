@@ -31,6 +31,7 @@ async function run() {
     await client.connect();
 
     const servicesCollection = client.db("servicesDB").collection("services");
+    const bookingsCollection = client.db("servicesDB").collection("bookings")
 
     app.get('/services',async(req,res)=>{
         const cursor = servicesCollection.find();
@@ -40,10 +41,48 @@ async function run() {
 
     app.get("/services/:id", async(req,res)=>{
         const id = req.params.id;
-        console.log(id)
+        const options = {
+            projection:{title:1,service_id:1,price:1,img:1}
+        }
         const query = { _id : new ObjectId(id)};
-        const result = await servicesCollection.findOne(query);
+        const result = await servicesCollection.findOne(query,options);
         res.send(result)
+    })
+
+    app.get("/bookings", async(req,res)=>{
+        console.log(req.query.email)
+        let query = {}
+        if(req.query?.email){
+            query = {email : req.query?.email}
+        }
+        const result = await bookingsCollection.find(query).toArray()
+        res.send(result)
+    })
+
+    app.post('/bookings', async(req,res)=>{
+        const booking = req.body;
+        const result = await bookingsCollection.insertOne(booking);
+        res.send(result)
+    })
+
+    app.patch("/bookings/:id",async(req,res)=>{
+        const id = req.params.id;
+        const updatedBooking = req.body;
+        const filter = {_id: new ObjectId(id)};
+        const booking = {
+            $set:{
+                status:updatedBooking.status
+            }
+        }
+        const result = await bookingsCollection.updateOne(filter,booking)
+        res.send(result); 
+    })
+
+    app.delete('/bookings/:id',async(req,res)=>{
+        const id = req.params.id;
+        const query = { _id : new ObjectId(id)};
+        const result = await bookingsCollection.deleteOne(query);
+        res.send(result);
     })
 
 
